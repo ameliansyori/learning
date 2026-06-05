@@ -1,0 +1,60 @@
+name: Machine Learning CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Run actions/checkout@v3
+    - name: Run actions/checkout@v3
+      uses: actions/checkout@v3
+
+    # 2. Set up Python 3.12.7 (Disesuaikan dengan spesifikasi gambar lo)
+    - name: Set up Python 3.12.7
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12.7'
+
+    # 3. Check Env
+    - name: Check Env
+      run: |
+        python --version
+        pip --version
+
+    # 4. Install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f Workflow-CI/requirements.txt ]; then pip install -r Workflow-CI/requirements.txt; fi
+
+    # 5. Set MLflow Tracking URI
+    - name: Set MLflow Tracking URI
+      run: |
+        # Mengeset environment variable untuk pelacakan lokal MLflow di runner
+        echo "MLFLOW_TRACKING_URI=file://$GITHUB_WORKSPACE/Workflow-CI/MLProject/mlruns" >> $GITHUB_ENV
+
+    # 6. Run mlflow project
+    - name: Run mlflow project
+      run: |
+        cd Workflow-CI/MLProject
+        # Menjalankan project menggunakan MLflow CLI sesuai standarisasi gambar
+        mlflow run . --entry-point main
+        mlflow run . --entry-point tuning
+
+    # 7. Install Python dependencies
+    - name: Install Python dependencies
+      run: |
+        echo "Verifying environment after running MLflow project..."
+
+    # 8. Upload to GitHub (Penyesuaian dari tahapan Upload to Google Drive)
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: mlflow-model-artifacts
+        path: Workflow-CI/MLProject/mlruns/
